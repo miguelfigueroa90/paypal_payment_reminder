@@ -8,6 +8,7 @@ class Api():
         """Api Constructor."""
         super().__init__()
 
+        self.base_url = os.getenv('PAYPAL_BASE_URL')
         self.check_token()
 
     def check_token(self):
@@ -28,7 +29,7 @@ class Api():
 
     def generate_token(self, access_token_filename):
         """Send a request to Paypal to get a new token."""
-        url = 'https://api.sandbox.paypal.com/v1/oauth2/token'
+        url = f'{self.base_url}/v1/oauth2/token'
         headers = {
             'Accept': 'application/json',
             'Accept-Language': 'en_US'
