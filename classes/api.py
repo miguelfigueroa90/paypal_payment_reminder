@@ -48,18 +48,30 @@ class Api():
             for item in items['items']:
                 status = item['status']
 
-                if 'PAID' != status:
-                    self.send_reminder()
+                if ('UNPAID' == status
+                    or 'SENT' == status
+                    or 'PARTIALLY_PAID' == status):
+                    # Send the reminder.
+                    self.send_reminder(item)
         else:
-            message = 'the request get a response with status code '
-            message += f'{response.status_code}.'
+            self.notify_response_code(response)
 
-            print(message)
-            exit()
-
-    def send_reminder(self):
+    def send_reminder(self, item):
         """Send a reminder for an invoice."""
-        pass
+        invoice_id = item['id']
+        url = f'{self.base_url}/v2/invoicing/invoices/{invoice_id}/remind'
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.access_token}'
+        }
+
+        response = self.post(url, headers)
+
+        if response.status_code == 204:
+            print(f'a remider was sent to invoice with id {invoice_id}.')
+        else:
+            self.notify_response_code(response)
 
     def generate_token(self):
         """Send a request to Paypal to get a new token."""
@@ -86,15 +98,19 @@ class Api():
             f.write(self.access_token)
             f.close()
         else:
-            message = 'the request get a response with status code '
-            message += f'{response.status_code}.'
+            self.notify_response_code(response)
 
-            print(message)
-            exit()
+    def notify_response_code(self, response):
+        """Print a response code and exit."""
+        message = 'the request get a response with status code '
+        message += f'{response.status_code}.'
 
-    def post(self, url, headers, data, credentials):
+        print(message)
+        exit()
+
+    def post(self, url, headers, data={}, credentials={}):
         """Perform a POST request and return the response."""
-        return requests.post(url, data, headers, auth=credentials)
+        return requests.post(url, data, headers=headers, auth=credentials)
 
     def get(self, url, headers):
         """Perform a GET request and return the response."""
