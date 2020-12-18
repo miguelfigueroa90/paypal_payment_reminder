@@ -1,0 +1,4 @@
+# Add .env support to your django/flask apps in development and deployments
+python-dotenv
+# Python HTTP for Humans.
+requests
