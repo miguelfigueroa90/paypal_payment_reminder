@@ -8,26 +8,60 @@ class Api():
         """Api Constructor."""
         super().__init__()
 
+        self.access_token_filename = 'access_token.txt'
         self.base_url = os.getenv('PAYPAL_BASE_URL')
+        self.basic_credentials = (
+            os.getenv('PAYPAL_CLIENT_ID'),
+            os.getenv('PAYPAL_SECRET'),
+        )
         self.check_token()
 
     def check_token(self):
         """Try to get the access token received from Paypal.
         If token file does no exist, it try to create a new one.
         """
-        access_token_filename = 'access_token.txt'
-
         try:
-            f = open(access_token_filename, "r")
+            f = open(self.access_token_filename, "r")
 
             self.access_token = f.read()
         except FileNotFoundError:
-            print(f'the file {access_token_filename} was not found.')
+            print(f'the file {self.access_token_filename} was not found.')
             print('generating new token...')
 
-            self.generate_token(access_token_filename)
+            self.generate_token()
 
-    def generate_token(self, access_token_filename):
+    def check_invoices(self):
+        """Get Paypal invoices, check if there is no payed invoices.
+        If there is pending invoices, send a reminder."""
+        url = f'{self.base_url}/v2/invoicing/invoices'
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.access_token}'
+        }
+
+        response = self.get(url, headers)
+
+        if response.status_code == 200:
+            items = response.json()
+
+            for item in items['items']:
+                status = item['status']
+
+                if 'PAID' != status:
+                    self.send_reminder()
+        else:
+            message = 'the request get a response with status code '
+            message += f'{response.status_code}.'
+
+            print(message)
+            exit()
+
+    def send_reminder(self):
+        """Send a reminder for an invoice."""
+        pass
+
+    def generate_token(self):
         """Send a request to Paypal to get a new token."""
         url = f'{self.base_url}/v1/oauth2/token'
         headers = {
@@ -38,16 +72,16 @@ class Api():
             'grant_type': 'client_credentials'
         }
 
-        response = self.post(url, headers, data)
+        response = self.post(url, headers, data, self.basic_credentials)
 
         if response.status_code == 200:
             self.access_token = response.json()['access_token']
 
             # Try to create a new file. If file exists, overwrite the content.
             try:
-                f = open(access_token_filename, "x")
+                f = open(self.access_token_filename, "x")
             except Exception:
-                f = open(access_token_filename, "w")
+                f = open(self.access_token_filename, "w")
 
             f.write(self.access_token)
             f.close()
@@ -58,11 +92,10 @@ class Api():
             print(message)
             exit()
 
-    def post(self, url, headers, data):
+    def post(self, url, headers, data, credentials):
         """Perform a POST request and return the response."""
-        auth = (
-            os.getenv('PAYPAL_CLIENT_ID'),
-            os.getenv('PAYPAL_SECRET'),
-        )
+        return requests.post(url, data, headers, auth=credentials)
 
-        return requests.post(url, data, headers, auth=auth)
+    def get(self, url, headers):
+        """Perform a GET request and return the response."""
+        return requests.get(url, headers=headers)
