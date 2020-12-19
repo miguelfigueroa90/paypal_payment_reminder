@@ -60,10 +60,13 @@ class Api():
         """Send a reminder for an invoice."""
         invoice_id = item['id']
         url = f'{self.base_url}/v2/invoicing/invoices/{invoice_id}/remind'
-
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.access_token}'
+        }
+        data = {
+            "send_to_invoicer": "true",
+            "send_to_recipient": "true",
         }
 
         response = self.post(url, headers)
