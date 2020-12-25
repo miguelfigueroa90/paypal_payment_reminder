@@ -53,6 +53,9 @@ class Api():
                     or 'PARTIALLY_PAID' == status):
                     # Send the reminder.
                     self.send_reminder(item)
+        elif response.status_code == 401:
+            self.generate_token()
+            self.check_invoices()
         else:
             self.notify_response_code(response)
 
