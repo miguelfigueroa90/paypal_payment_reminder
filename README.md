@@ -1,5 +1,5 @@
 # PayPal Payment Reminder
-Send a payment reminder to customers when invoice status is not payed
+Send a payment reminder to customers when invoice status is not payed (Python)
 
 ## Installation
 
